@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How InvestAgent Works</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0e1117;
+            color: #c9d1d9;
+            line-height: 1.7;
+        }
+
+        /* ── Navigation ───────────────────────────── */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(14, 17, 23, 0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #21262d;
+            padding: 0.8rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        nav a {
+            color: #8b949e;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.15s;
+        }
+
+        nav a:hover, nav a.active { color: #fafafa; }
+
+        nav .brand {
+            color: #fafafa;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-right: auto;
+        }
+
+        /* ── Sidebar TOC (desktop) ────────────────── */
+        .layout {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .sidebar {
+            width: 240px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 60px;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+            padding: 2rem 1rem 2rem 1.5rem;
+            border-right: 1px solid #21262d;
+        }
+
+        .sidebar h4 {
+            color: #8b949e;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.8rem;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #8b949e;
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.3rem 0;
+            transition: color 0.15s;
+        }
+
+        .sidebar a:hover { color: #fafafa; }
+        .sidebar a.depth-2 { padding-left: 1rem; font-size: 0.8rem; }
+
+        /* ── Main content ─────────────────────────── */
+        .content {
+            flex: 1;
+            min-width: 0;
+            padding: 2.5rem 3rem 6rem;
+        }
+
+        .content h1 {
+            font-size: 2.2rem;
+            color: #fafafa;
+            margin-bottom: 0.3rem;
+        }
+
+        .subtitle {
+            color: #8b949e;
+            font-size: 1.05rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .content h2 {
+            font-size: 1.5rem;
+            color: #fafafa;
+            margin-top: 3rem;
+            margin-bottom: 0.6rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #21262d;
+        }
+
+        .content h2:first-of-type { border-top: none; margin-top: 0; }
+
+        .content h3 {
+            font-size: 1.15rem;
+            color: #e6edf3;
+            margin-top: 2rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .content p { margin-bottom: 1rem; }
+
+        .content a { color: #58a6ff; text-decoration: none; }
+        .content a:hover { text-decoration: underline; }
+
+        .content ul, .content ol {
+            margin: 0 0 1rem 1.5rem;
+        }
+
+        .content li { margin-bottom: 0.3rem; }
+
+        strong { color: #e6edf3; }
+
+        /* ── Code blocks ──────────────────────────── */
+        pre {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+            overflow-x: auto;
+            margin: 1rem 0 1.5rem;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        code {
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            color: #e6edf3;
+        }
+
+        p code, li code {
+            background: #21262d;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.88em;
+        }
+
+        /* ── Diagram / ascii art blocks ───────────── */
+        .diagram {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            margin: 1rem 0 1.5rem;
+            overflow-x: auto;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: #8b949e;
+            white-space: pre;
+        }
+
+        /* ── Callout boxes ────────────────────────── */
+        .callout {
+            border-left: 3px solid #4CAF50;
+            background: rgba(76, 175, 80, 0.06);
+            padding: 1rem 1.2rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .callout.warn {
+            border-color: #d29922;
+            background: rgba(210, 153, 34, 0.06);
+        }
+
+        .callout.info {
+            border-color: #58a6ff;
+            background: rgba(88, 166, 255, 0.06);
+        }
+
+        .callout strong {
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+
+        /* ── Tables ───────────────────────────────── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        th {
+            text-align: left;
+            background: #161b22;
+            color: #e6edf3;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #30363d;
+        }
+
+        td {
+            padding: 0.5rem 0.8rem;
+            border: 1px solid #30363d;
+        }
+
+        tr:nth-child(even) td { background: rgba(22, 27, 34, 0.5); }
+
+        /* ── Responsive ───────────────────────────── */
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .content { padding: 1.5rem 1.2rem 4rem; }
+            nav { padding: 0.6rem 1rem; gap: 1rem; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a class="brand" href="index.html">Harinee's Projects</a>
+    <a href="index.html">Gallery</a>
+    <a href="how-it-works.html" class="active">How It Works</a>
+    <a href="https://github.com/harineek24/investagent" target="_blank">GitHub</a>
+</nav>
+
+<div class="layout">
+
+<!-- ── Sidebar ────────────────────────────────── -->
+<aside class="sidebar">
+    <h4>Contents</h4>
+    <a href="#overview">Overview</a>
+    <a href="#react" class="depth-2">ReAct Pattern</a>
+    <a href="#agents">The Six Analysts</a>
+    <a href="#value" class="depth-2">Value</a>
+    <a href="#growth" class="depth-2">Growth</a>
+    <a href="#contrarian" class="depth-2">Contrarian</a>
+    <a href="#technical" class="depth-2">Technical</a>
+    <a href="#fundamental" class="depth-2">Fundamental</a>
+    <a href="#sentiment" class="depth-2">Sentiment</a>
+    <a href="#agreement">Agreement &amp; Debate</a>
+    <a href="#risk">Risk Manager</a>
+    <a href="#pm">Portfolio Manager</a>
+    <a href="#memory">Memory &amp; Learning</a>
+    <a href="#llm-routing">LLM Routing</a>
+    <a href="#tools">Data Tools</a>
+    <a href="#backtesting">Backtesting</a>
+    <a href="#graph">LangGraph Wiring</a>
+    <a href="#takeaways">Key Takeaways</a>
+</aside>
+
+<!-- ── Content ────────────────────────────────── -->
+<main class="content">
+
+<h1>How InvestAgent Works</h1>
+<p class="subtitle">
+    A lecture-style walkthrough of every algorithm, agent, and design decision
+    inside a multi-agent AI hedge fund simulator.
+</p>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="overview">1. System Overview</h2>
+
+<p>
+    InvestAgent is a <strong>multi-agent system</strong> built on
+    <a href="https://github.com/langchain-ai/langgraph" target="_blank">LangGraph</a>.
+    Instead of a single prompt producing an answer, six autonomous analyst agents
+    each independently research a stock, debate when they disagree, and a portfolio
+    manager makes the final call. Everything runs on free-tier LLMs.
+</p>
+
+<div class="diagram">
+User Input (tickers, date range, cash)
+    |
+    v
++-------------------------------------------------------+
+|  6 Analyst Agents run in PARALLEL                     |
+|  (Value, Growth, Contrarian, Technical,               |
+|   Fundamental, Sentiment)                             |
+|  Each runs a ReAct loop: Think -> Act -> Observe x4   |
++-------------------------------------------------------+
+    |
+    v
+Agreement Check  ── "Do the agents agree?"
+    |                  (measure consensus)
+    |
+    +-- >= 60% agree -----> Risk Manager
+    |
+    +-- < 60% agree ------> Debate (LLM moderator)
+                                |
+                                v
+                            Risk Manager
+                                |
+                                v
+                         Portfolio Manager
+                      (multi-turn ReAct agent)
+                                |
+                                v
+                      Final BUY / SELL / HOLD
+                      + Save to Memory (SQLite)
+</div>
+
+<div class="callout info">
+    <strong>What makes this "agentic" vs. a regular LLM call?</strong>
+    Each agent autonomously decides <em>which</em> tools to call and <em>how many times</em>
+    to loop. The debate only happens when there's real disagreement. The portfolio manager
+    can fetch additional data before deciding. None of this is hardcoded — the LLM controls
+    the flow.
+</div>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="react">2. The ReAct Agent Pattern</h2>
+
+<p>
+    <strong>ReAct</strong> (Reasoning + Acting) is an agent design pattern from the
+    <a href="https://arxiv.org/abs/2210.03629" target="_blank">2022 paper by Yao et al.</a>
+    The idea is simple: instead of the LLM answering in one shot, it enters a loop:
+</p>
+
+<ol>
+    <li><strong>Think</strong> — "I need the financial metrics to check the P/E ratio."</li>
+    <li><strong>Act</strong> — Calls <code>get_financial_metrics({"ticker": "AAPL"})</code></li>
+    <li><strong>Observe</strong> — Reads the result: P/E = 28.5, ROE = 147%, ...</li>
+    <li><strong>Repeat</strong> — "Now I need price data for technical confirmation."</li>
+    <li><strong>Conclude</strong> — Emits a final signal: bullish / neutral / bearish + confidence</li>
+</ol>
+
+<p>Each agent gets up to <strong>4 tool calls</strong> per ticker (the <code>MAX_ITERATIONS</code> constant).
+    This soft limit prevents runaway API costs on free tiers while still allowing meaningful research.</p>
+
+<h3>How tool calls work under the hood</h3>
+
+<p>The agent outputs a special format that the system parses:</p>
+
+<pre><code>TOOL_CALL: get_financial_metrics({"ticker": "AAPL"})</code></pre>
+
+<p>The runner extracts the function name and JSON arguments, executes the tool, and appends
+    the result back into the conversation. Key parameters like <code>ticker</code>,
+    <code>start_date</code>, and <code>end_date</code> are auto-injected so the agent doesn't
+    waste tokens repeating them.</p>
+
+<h3>If the loop exhausts without concluding</h3>
+
+<p>If an agent uses all 4 iterations without emitting a <code>FINAL_ANSWER</code>, the system
+    returns a <strong>neutral signal with 30% confidence</strong> — a safe fallback that
+    effectively says "I couldn't form a strong opinion."</p>
+
+<pre><code>// Fallback when ReAct loop exhausts
+{
+    "signal": "neutral",
+    "confidence": 30,
+    "reasoning": "Unable to form conviction within iteration limit."
+}</code></pre>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="agents">3. The Six Analyst Agents</h2>
+
+<p>
+    Each analyst has a distinct <strong>investment philosophy</strong> embedded in its system prompt
+    and a <strong>scoring algorithm</strong> that converts financial data into a signal.
+    They all share the same 7 tools, but each cares about different metrics.
+</p>
+
+<!-- ── Value ──────────────────────────────────── -->
+<h3 id="value">3.1 Value Analyst</h3>
+
+<p><strong>Philosophy:</strong> Buffett &amp; Graham — buy quality companies trading below intrinsic value.
+    Looks for a "margin of safety" between price and what the business is actually worth.</p>
+
+<table>
+    <tr><th>Metric</th><th>Bullish</th><th>Neutral</th><th>Bearish</th></tr>
+    <tr><td>ROE</td><td>&gt;15% (+2)</td><td>10-15% (+1)</td><td>&lt;5% (-1)</td></tr>
+    <tr><td>Profit Margin</td><td>&gt;20% (+2)</td><td>10-20% (+1)</td><td>&lt;0% (-1)</td></tr>
+    <tr><td>Debt/Equity</td><td>&lt;50 (+2)</td><td>50-100 (+1)</td><td>&gt;100 (-1)</td></tr>
+    <tr><td>Current Ratio</td><td>&gt;1.5 (+1)</td><td>1.0-1.5 (0)</td><td>&lt;1.0 (-1)</td></tr>
+    <tr><td>P/E Ratio</td><td>0-15 (+2)</td><td>15-20 (+1)</td><td>&gt;30 (-1)</td></tr>
+    <tr><td>P/B Ratio</td><td>0-1.5 (+2)</td><td>1.5-3 (+1)</td><td>&gt;5 (-1)</td></tr>
+    <tr><td>FCF Yield</td><td>&gt;8% (+2)</td><td>5-8% (+1)</td><td>—</td></tr>
+</table>
+
+<p><strong>Signal logic:</strong> Score ranges from -12 to +12.
+    Score &ge; 4 = bullish, score &le; -2 = bearish, otherwise neutral.
+    Confidence = <code>min(|score| / max_score, 1.0) &times; 100</code>.</p>
+
+<!-- ── Growth ─────────────────────────────────── -->
+<h3 id="growth">3.2 Growth Analyst</h3>
+
+<p><strong>Philosophy:</strong> Peter Lynch &amp; Cathie Wood — find companies growing revenue and
+    earnings faster than the market. Willing to pay premium valuations for high growth.</p>
+
+<table>
+    <tr><th>Metric</th><th>Bullish</th><th>Bearish</th></tr>
+    <tr><td>Revenue Growth</td><td>&gt;25% (+3)</td><td>&lt;0% (-2)</td></tr>
+    <tr><td>Earnings Growth</td><td>&gt;25% (+3)</td><td>&lt;0% (-2)</td></tr>
+    <tr><td>PEG Ratio</td><td>&lt;1.0 (+2)</td><td>&gt;3.0 (-1)</td></tr>
+    <tr><td>Operating Margin</td><td>&gt;25% (+2)</td><td>—</td></tr>
+    <tr><td>20-Day Return</td><td>&gt;10% (+1)</td><td>&lt;-15% (-1)</td></tr>
+</table>
+
+<div class="callout">
+    <strong>Why PEG matters</strong>
+    The PEG ratio (P/E divided by earnings growth rate) normalizes valuation for growth.
+    A PEG &lt; 1.0 means you're paying less than "1x" for each point of growth —
+    Lynch's favorite signal that a stock is undervalued relative to its trajectory.
+</div>
+
+<!-- ── Contrarian ─────────────────────────────── -->
+<h3 id="contrarian">3.3 Contrarian Analyst</h3>
+
+<p><strong>Philosophy:</strong> Michael Burry &amp; Bill Ackman — "buy fear, sell greed."
+    Looks for stocks the market has beaten down too far, as long as the business is fundamentally sound.</p>
+
+<table>
+    <tr><th>Signal</th><th>Condition</th><th>Points</th></tr>
+    <tr><td>Near 52-week low</td><td>Price within bottom 30%</td><td>+2</td></tr>
+    <tr><td>Near 52-week high</td><td>Price within top 10%</td><td>-2</td></tr>
+    <tr><td>Discount to 200D MA</td><td>&gt;20% below average</td><td>+2</td></tr>
+    <tr><td>Premium to 200D MA</td><td>&gt;20% above average</td><td>-1</td></tr>
+    <tr><td>Solid fundamentals</td><td>Positive FCF + decent metrics</td><td>+2</td></tr>
+    <tr><td>High volatility</td><td>&gt;40%</td><td>+1</td></tr>
+    <tr><td>Low P/E</td><td>&lt;12</td><td>+2</td></tr>
+</table>
+
+<p>The key insight: contrarian analysis inverts the signals that most analysts fear.
+    Where the sentiment agent sees danger, the contrarian sees opportunity.</p>
+
+<!-- ── Technical ──────────────────────────────── -->
+<h3 id="technical">3.4 Technical Analyst</h3>
+
+<p><strong>Philosophy:</strong> Pure price action. Doesn't care about the company's business — only
+    what the chart says about momentum, trend, and mean reversion.</p>
+
+<h3>Indicator Suite</h3>
+
+<p><strong>1. Exponential Moving Averages (EMA)</strong> — Three periods: 8 (fast), 21 (medium), 55 (slow).</p>
+<pre><code>EMA8 > EMA21 > EMA55  →  Strong uptrend  (+2)
+EMA8 > EMA21          →  Uptrend         (+1)
+EMA8 < EMA21 < EMA55  →  Strong downtrend (-2)
+EMA8 < EMA21          →  Downtrend       (-1)</code></pre>
+
+<p><strong>2. RSI (Relative Strength Index, period = 14)</strong> — Measures momentum on a 0-100 scale.</p>
+<pre><code>RSI < 30   →  Oversold   (+2)   ← "too much selling, bounce expected"
+RSI > 70   →  Overbought (-2)   ← "too much buying, pullback expected"</code></pre>
+
+<p><strong>3. MACD (Moving Average Convergence Divergence)</strong> — Trend-following momentum indicator.</p>
+<pre><code>Histogram crosses above 0  →  Bullish crossover (+2)
+Histogram > 0              →  Bullish           (+1)
+Histogram crosses below 0  →  Bearish crossover (-2)
+Histogram < 0              →  Bearish           (-1)</code></pre>
+
+<p><strong>4. Bollinger Bands</strong> (20-period, 2 standard deviations) — Mean-reversion signal.</p>
+<pre><code>Price below lower band  →  Oversold  (+1)
+Price above upper band  →  Overbought (-1)</code></pre>
+
+<p><strong>5. Volume Confirmation</strong> — If volume is &gt;1.5x the 20-day average and the score is
+    already directional, add +1 or -1. High volume validates conviction.</p>
+
+<p>Signal threshold: score &ge; 3 = bullish, score &le; -3 = bearish.</p>
+
+<!-- ── Fundamental ────────────────────────────── -->
+<h3 id="fundamental">3.5 Fundamental Analyst</h3>
+
+<p><strong>Philosophy:</strong> Holistic analysis across four dimensions. Unlike the value agent (which
+    focuses on cheapness) or growth (which focuses on trajectory), the fundamental analyst
+    tries to see the complete picture.</p>
+
+<p>Each dimension scores independently from -2 to +2, then they're summed:</p>
+
+<table>
+    <tr><th>Dimension</th><th>Metrics</th><th>Range</th></tr>
+    <tr><td>Profitability</td><td>ROE, Profit Margin, Operating Margin</td><td>-3 to +5</td></tr>
+    <tr><td>Financial Health</td><td>Debt/Equity, Current Ratio, FCF</td><td>-3 to +4</td></tr>
+    <tr><td>Valuation</td><td>P/E, P/B, P/S</td><td>-4 to +4</td></tr>
+    <tr><td>Growth</td><td>Revenue Growth, Earnings Growth</td><td>-2 to +4</td></tr>
+</table>
+
+<p>Total range is roughly -8 to +8. Score &ge; 5 = bullish, &le; -3 = bearish.</p>
+
+<!-- ── Sentiment ──────────────────────────────── -->
+<h3 id="sentiment">3.6 Sentiment Analyst</h3>
+
+<p><strong>Philosophy:</strong> The market is driven by people. Track what they're saying, what
+    insiders are doing, and what Wall Street recommends.</p>
+
+<p><strong>Three independent signal sources:</strong></p>
+
+<ol>
+    <li>
+        <strong>News Sentiment</strong> — Keyword matching on recent headlines.
+        Counts positive words (<em>beat, surge, upgrade, record</em>) vs. negative
+        (<em>miss, crash, downgrade, weak</em>). Net positive &gt; 2 = +2, net negative &lt; -2 = -2.
+    </li>
+    <li>
+        <strong>Insider Trades</strong> — If company executives are buying their own stock, that's a
+        vote of confidence (+1). If they're selling more than 2x buys, that's a warning (-1).
+    </li>
+    <li>
+        <strong>Analyst Recommendations</strong> — Buy upgrades vs. sell downgrades from Wall Street
+        analysts. More buys = +1, more sells = -1.
+    </li>
+</ol>
+
+<p>Combined score range: -4 to +4. Score &ge; 2 = bullish, &le; -2 = bearish.</p>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="agreement">4. Agreement Check &amp; Debate</h2>
+
+<p>After all six analysts finish, the system asks: <strong>"Do they agree?"</strong></p>
+
+<h3>Measuring consensus</h3>
+
+<p>For each ticker, count the signal distribution:</p>
+
+<pre><code>AAPL signals: [bullish, bullish, bullish, bearish, bearish, neutral]
+Majority: bullish (3 out of 6) = 50% agreement
+
+MSFT signals: [bullish, bullish, bullish, bullish, neutral, neutral]
+Majority: bullish (4 out of 6) = 67% agreement
+
+Overall agreement = average(50%, 67%) = 58.5%</code></pre>
+
+<p>If overall agreement &lt; <strong>60% threshold</strong>, the Debate node activates.</p>
+
+<h3>The Debate mechanism</h3>
+
+<p>A <strong>senior investment committee moderator</strong> (an LLM with a special prompt) receives:</p>
+
+<ol>
+    <li>Every analyst's signal, confidence, and reasoning</li>
+    <li>Each analyst's <strong>historical track record</strong> from the memory database</li>
+</ol>
+
+<p>The moderator's job is to produce a synthesis:</p>
+
+<pre><code>{
+    "synthesis": "Value and Fundamental see strong margins, but Technical
+                  shows a bearish EMA crossover. The bearish technicals
+                  are short-term; fundamentals dominate on this timeframe.",
+    "leaning": "bullish",
+    "confidence_adjustment": +10,
+    "key_disagreement": "Short-term momentum vs. long-term value",
+    "strongest_argument": "Value Analyst (75% historical accuracy) —
+                          P/E of 14 with 22% ROE is a clear margin of safety"
+}</code></pre>
+
+<div class="callout">
+    <strong>Why track records matter in debate</strong>
+    If the Value Analyst has 75% historical accuracy over 48 signals and the Technical Analyst
+    has 58% over 30 signals, the moderator can rationally weight the value argument higher.
+    This is a form of <strong>meta-learning</strong> — the system learns which of its own agents
+    to trust more over time.
+</div>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="risk">5. Risk Manager</h2>
+
+<p>Before the Portfolio Manager can act, the Risk Manager enforces hard portfolio constraints.
+    This prevents any single stock from dominating the portfolio.</p>
+
+<h3>The 20% Rule</h3>
+
+<pre><code>Portfolio total value = cash + sum(position values)
+Max per ticker        = 20% of total
+Remaining limit       = max(0, max_per_ticker - current_position_value)
+Final limit           = min(remaining_limit, available_cash)
+Max shares            = floor(final_limit / current_price)</code></pre>
+
+<p><strong>Example:</strong></p>
+
+<pre><code>Portfolio:  $100,000 cash + $50,000 positions = $150,000 total
+20% max:    $30,000 per ticker
+AAPL held:  $10,000 currently
+Remaining:  $30,000 - $10,000 = $20,000
+Cash OK:    $100,000 available (no constraint)
+Final:      Can buy up to $20,000 more of AAPL</code></pre>
+
+<p>The Portfolio Manager receives these limits and is <strong>never allowed to exceed them</strong>,
+    no matter how bullish the analysts are. Quantities are clamped after the PM decides.</p>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="pm">6. Portfolio Manager</h2>
+
+<p>The PM is the <strong>final decision maker</strong> and is itself a ReAct agent with up to
+    <strong>3 tool calls</strong> per ticker. It has the most context of any node in the system.</p>
+
+<h3>Information available to the PM</h3>
+
+<table>
+    <tr><th>Input</th><th>Source</th></tr>
+    <tr><td>6 analyst signals + confidence</td><td>Analyst nodes</td></tr>
+    <tr><td>Debate synthesis (if it happened)</td><td>Debate node</td></tr>
+    <tr><td>Each analyst's historical accuracy</td><td>Memory DB</td></tr>
+    <tr><td>Past decisions on this ticker</td><td>Memory DB</td></tr>
+    <tr><td>Risk limits (max shares, remaining $)</td><td>Risk Manager</td></tr>
+    <tr><td>Current portfolio (cash, positions)</td><td>State</td></tr>
+    <tr><td>Additional tool access</td><td>API tools</td></tr>
+</table>
+
+<h3>Decision rules embedded in the prompt</h3>
+
+<ol>
+    <li>Weight analyst signals by their track record accuracy</li>
+    <li>If debate occurred, seriously consider the synthesis</li>
+    <li>Only buy with strong conviction AND available limit</li>
+    <li>Only sell if holding shares AND bearish conviction</li>
+    <li>Never exceed the risk manager's max shares</li>
+    <li>Be conservative — when in doubt, hold</li>
+    <li>Explain the reasoning chain, not just the conclusion</li>
+</ol>
+
+<h3>Quantity clamping</h3>
+
+<p>Even after the PM decides, a safety check ensures constraints are respected:</p>
+
+<pre><code>if action == "buy":
+    quantity = min(pm_quantity, risk_manager_max_shares)
+elif action == "sell":
+    quantity = min(pm_quantity, shares_currently_held)</code></pre>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="memory">7. Memory &amp; Learning</h2>
+
+<p>InvestAgent uses a <strong>SQLite database</strong> (<code>investagent_memory.db</code>) to persist
+    decisions across sessions. This is what separates it from a stateless LLM wrapper.</p>
+
+<h3>Three tables</h3>
+
+<table>
+    <tr><th>Table</th><th>Stores</th><th>Used by</th></tr>
+    <tr>
+        <td><code>decisions</code></td>
+        <td>Every agent signal, PM action, price at decision, 30-day outcome</td>
+        <td>PM (reviews past decisions on this ticker)</td>
+    </tr>
+    <tr>
+        <td><code>runs</code></td>
+        <td>Run metadata: tickers, provider, return %</td>
+        <td>Dashboard, backtester</td>
+    </tr>
+    <tr>
+        <td><code>agent_scores</code></td>
+        <td>Per-agent accuracy: signal, was_correct (1/0)</td>
+        <td>Debate moderator, PM</td>
+    </tr>
+</table>
+
+<h3>The learning loop</h3>
+
+<div class="diagram">
+Run 1:  Agent makes prediction → saved to memory
+        |
+        v (30+ days later)
+Run N:  Check actual price movement
+        → Mark outcome as "correct" or "incorrect"
+        → Update agent_scores
+        |
+        v
+Run N+1: Debate moderator and PM receive track records
+         → Weight signals by historical accuracy
+         → Better-performing agents get more influence
+</div>
+
+<p>Over many runs, agents that are consistently wrong get discounted, and agents that are
+    consistently right gain more influence. This is a lightweight form of
+    <strong>online meta-learning</strong> without retraining any model weights.</p>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="llm-routing">8. Intelligent LLM Routing</h2>
+
+<p>Not all agents need the same model. The system uses a <strong>two-tier routing strategy</strong>
+    to balance cost and capability:</p>
+
+<table>
+    <tr><th>Agent</th><th>Tier</th><th>Groq Model</th><th>Gemini Model</th></tr>
+    <tr><td>Value Analyst</td><td>fast</td><td>Llama 3.1 8B</td><td>Gemini 2.0 Flash Lite</td></tr>
+    <tr><td>Growth Analyst</td><td>fast</td><td>Llama 3.1 8B</td><td>Gemini 2.0 Flash Lite</td></tr>
+    <tr><td>Contrarian Analyst</td><td>fast</td><td>Llama 3.1 8B</td><td>Gemini 2.0 Flash Lite</td></tr>
+    <tr><td>Technical Analyst</td><td>fast</td><td>Llama 3.1 8B</td><td>Gemini 2.0 Flash Lite</td></tr>
+    <tr><td>Fundamental Analyst</td><td>fast</td><td>Llama 3.1 8B</td><td>Gemini 2.0 Flash Lite</td></tr>
+    <tr><td>Sentiment Analyst</td><td>fast</td><td>Llama 3.1 8B</td><td>Gemini 2.0 Flash Lite</td></tr>
+    <tr><td>Risk Manager</td><td>fast</td><td>Llama 3.1 8B</td><td>Gemini 2.0 Flash Lite</td></tr>
+    <tr><td><strong>Portfolio Manager</strong></td><td><strong>smart</strong></td><td><strong>Llama 3.3 70B</strong></td><td><strong>Gemini 2.0 Flash</strong></td></tr>
+    <tr><td><strong>Debate Moderator</strong></td><td><strong>smart</strong></td><td><strong>Llama 3.3 70B</strong></td><td><strong>Gemini 2.0 Flash</strong></td></tr>
+</table>
+
+<div class="callout">
+    <strong>Why this works</strong>
+    Analyst agents do relatively simple scoring (compare metrics to thresholds). An 8B model handles
+    this well. But the Portfolio Manager must synthesize conflicting signals, weigh track records,
+    consider risk limits, and form a nuanced decision — that's a job for a 70B model.
+    All of this runs on <strong>free-tier APIs</strong>.
+</div>
+
+<p>All models use <strong>temperature = 0</strong> (greedy decoding) for deterministic, reproducible outputs.</p>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="tools">9. Data Tools</h2>
+
+<p>Every tool in the system is <strong>free, no API key required</strong> (except the LLM itself).
+    The two data sources are Yahoo Finance (via yfinance) and SEC EDGAR.</p>
+
+<h3>Yahoo Finance tools (yfinance)</h3>
+
+<table>
+    <tr><th>Tool</th><th>Returns</th></tr>
+    <tr><td><code>get_prices</code></td><td>OHLCV data + computed EMAs (8/21/55), RSI-14, volatility</td></tr>
+    <tr><td><code>get_financial_metrics</code></td><td>28 fields: P/E, ROE, margins, growth rates, debt ratios</td></tr>
+    <tr><td><code>get_company_news</code></td><td>Recent news articles with titles and publishers</td></tr>
+    <tr><td><code>get_insider_trades</code></td><td>Insider buy/sell transaction records</td></tr>
+    <tr><td><code>get_recommendations</code></td><td>Analyst upgrade/downgrade history</td></tr>
+</table>
+
+<h3>Smart price summarization</h3>
+
+<p>Raw price data can be 90+ rows of OHLCV. Instead of dumping all of it into the LLM context
+    (wasting tokens and confusing smaller models), the system computes a <strong>summary object</strong>:</p>
+
+<pre><code>{
+    "data_points": 90,
+    "latest_close": 185.42,
+    "period_return_pct": 12.3,
+    "period_high": 192.50,
+    "period_low": 165.10,
+    "avg_volume": 52_000_000,
+    "ema_8": 184.20,
+    "ema_21": 180.15,
+    "ema_55": 175.30,
+    "rsi_14": 62.4,
+    "volatility_pct": 18.7,
+    "last_5_closes": [184.50, 185.00, 183.90, 185.42, 184.80]
+}</code></pre>
+
+<h3>SEC EDGAR tools (free, no key needed)</h3>
+
+<table>
+    <tr><th>Tool</th><th>Returns</th></tr>
+    <tr><td><code>get_sec_financial_facts</code></td><td>Structured XBRL data: revenue, net income, assets, equity</td></tr>
+    <tr><td><code>get_sec_recent_filings</code></td><td>10-K and 10-Q filing dates and metadata</td></tr>
+</table>
+
+<p>SEC data gives agents access to <strong>official filing numbers</strong> — not estimates.
+    This is particularly valuable for the fundamental analyst and PM.</p>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="backtesting">10. Backtesting</h2>
+
+<p>The backtester runs the <strong>entire multi-agent pipeline</strong> repeatedly over historical windows
+    to simulate how the system would have performed over time.</p>
+
+<h3>Rolling window algorithm</h3>
+
+<div class="diagram">
+|--- 90-day lookback ---|--- 30-day step ---|
+                        ^                   ^
+                    window_start        window_end
+
+Step 1: Run hedge fund on window → get buy/sell/hold decisions
+Step 2: Execute decisions against the portfolio
+Step 3: Record portfolio value
+Step 4: Slide window forward by 30 days
+Step 5: Repeat until end date
+</div>
+
+<p><strong>Key properties:</strong></p>
+<ul>
+    <li>Uses <strong>actual historical prices</strong> from Yahoo Finance</li>
+    <li>Each window's decisions compound into the next (realistic portfolio evolution)</li>
+    <li>90-day lookback gives technical indicators enough history to be meaningful</li>
+    <li>All agent decisions are persisted to memory, enabling the learning loop</li>
+</ul>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="graph">11. LangGraph Wiring</h2>
+
+<p>The entire workflow is expressed as a <strong>directed graph</strong> using LangGraph's
+    <code>StateGraph</code>. Here's the actual wiring code, simplified:</p>
+
+<pre><code>graph = StateGraph(AgentState)
+
+# Add all nodes
+graph.add_node("Value Analyst", value_agent)
+graph.add_node("Growth Analyst", growth_agent)
+graph.add_node("Contrarian Analyst", contrarian_agent)
+graph.add_node("Technical Analyst", technical_agent)
+graph.add_node("Fundamental Analyst", fundamental_agent)
+graph.add_node("Sentiment Analyst", sentiment_agent)
+graph.add_node("Agreement Check", check_agreement)
+graph.add_node("Debate", debate_agents)
+graph.add_node("Risk Manager", risk_manager)
+graph.add_node("Portfolio Manager", portfolio_manager)
+
+# START → all analysts run in parallel
+for name in analyst_names:
+    graph.add_edge("__start__", name)
+
+# All analysts → Agreement Check (waits for all to finish)
+for name in analyst_names:
+    graph.add_edge(name, "Agreement Check")
+
+# Conditional branch: debate or skip
+graph.add_conditional_edges(
+    "Agreement Check",
+    should_debate,     # returns "Debate" or "Risk Manager"
+    {"Debate": "Debate", "Risk Manager": "Risk Manager"},
+)
+
+# Debate → Risk Manager → Portfolio Manager → END
+graph.add_edge("Debate", "Risk Manager")
+graph.add_edge("Risk Manager", "Portfolio Manager")
+graph.add_edge("Portfolio Manager", END)</code></pre>
+
+<h3>State management</h3>
+
+<p>All nodes read from and write to a shared <code>AgentState</code> (a typed dict). Two key patterns:</p>
+
+<ul>
+    <li><strong>Message accumulation</strong> — Messages from all agents are appended to a shared list using
+        <code>operator.add</code>, preserving the full conversation trail.</li>
+    <li><strong>Dict merging</strong> — Each analyst adds its signals to a shared <code>analyst_signals</code>
+        dict via a custom <code>merge_dicts</code> reducer. No agent overwrites another's output.</li>
+</ul>
+
+<!-- ────────────────────────────────────────────── -->
+<h2 id="takeaways">12. Key Takeaways</h2>
+
+<div class="callout">
+    <strong>1. Agentic &ne; one big prompt</strong>
+    Each agent autonomously decides what data to fetch. The debate only fires when there's
+    real disagreement. The graph branches dynamically. This is what makes it "agentic."
+</div>
+
+<div class="callout">
+    <strong>2. Diverse perspectives beat a single model</strong>
+    Six agents with different philosophies (value, growth, contrarian, technical, fundamental,
+    sentiment) naturally surface different aspects of a stock. Their disagreements are
+    information, not noise.
+</div>
+
+<div class="callout">
+    <strong>3. Memory enables meta-learning</strong>
+    By tracking which agents are historically accurate and feeding that back into the debate
+    and PM, the system learns who to trust — without retraining any weights.
+</div>
+
+<div class="callout">
+    <strong>4. Smart resource allocation</strong>
+    Fast 8B models for scoring agents, capable 70B models for the PM and debate. All on free tiers.
+    This makes the system practical to run at zero cost.
+</div>
+
+<div class="callout">
+    <strong>5. Risk constraints are non-negotiable</strong>
+    The 20% per-ticker limit is enforced after the PM decides, not by the PM itself.
+    Hard limits prevent the LLM from making catastrophic allocation errors.
+</div>
+
+<div class="callout warn">
+    <strong>Disclaimer</strong>
+    This is an educational simulator. The agents use simplified scoring heuristics and
+    free-tier LLMs. Real hedge funds use proprietary data, vastly more compute, and
+    human oversight. Do not use this for actual trading decisions.
+</div>
+
+</main>
+</div>
+
+</body>
+</html>

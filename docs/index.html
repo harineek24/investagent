@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harinee's Projects</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0e1117;
+            color: #fafafa;
+            min-height: 100vh;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem 2rem;
+        }
+
+        .hero h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero p {
+            color: #8b949e;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.5rem;
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 1.8rem;
+            transition: border-color 0.2s, transform 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            border-color: #4CAF50;
+            transform: translateY(-3px);
+        }
+
+        .card-icon {
+            font-size: 2.2rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card p {
+            color: #8b949e;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .tag {
+            background: #21262d;
+            color: #8b949e;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.55rem 1.1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: #fff;
+        }
+
+        .btn-primary:hover { background: #45a049; }
+
+        .btn-secondary {
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+        }
+
+        .btn-secondary:hover { background: #30363d; }
+
+        /* Status dot: shows when the app is being woken up */
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-top: 0.75rem;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #484f58;
+            transition: background 0.3s;
+        }
+
+        .dot.waking  { background: #d29922; animation: pulse 1s infinite; }
+        .dot.ready   { background: #4CAF50; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        footer {
+            text-align: center;
+            padding: 3rem 1rem 2rem;
+            color: #484f58;
+            font-size: 0.85rem;
+        }
+
+        footer a { color: #8b949e; text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<nav style="display:flex;align-items:center;gap:1.5rem;padding:0.8rem 2rem;border-bottom:1px solid #21262d;">
+    <span style="color:#fafafa;font-weight:700;margin-right:auto;">Harinee's Projects</span>
+    <a href="index.html" style="color:#fafafa;text-decoration:none;font-size:0.9rem;">Gallery</a>
+    <a href="how-it-works.html" style="color:#8b949e;text-decoration:none;font-size:0.9rem;">How It Works</a>
+</nav>
+
+<div class="hero">
+    <h1>Harinee's Projects</h1>
+    <p>AI and data science projects. Apps wake up automatically when you open this page.</p>
+</div>
+
+<div class="grid">
+
+    <!-- ── InvestAgent Card ──────────────────────────── -->
+    <div class="card" data-app="investagent">
+        <div class="card-icon">📊</div>
+        <h2>InvestAgent</h2>
+        <p>
+            Agentic AI hedge fund simulator. Six autonomous analyst agents
+            debate market signals and a portfolio manager makes the final call.
+        </p>
+        <div class="tags">
+            <span class="tag">LangGraph</span>
+            <span class="tag">Multi-Agent</span>
+            <span class="tag">Finance</span>
+            <span class="tag">Free LLMs</span>
+        </div>
+        <div class="card-actions">
+            <!-- Replace YOUR_STREAMLIT_URL with your actual Streamlit Cloud URL -->
+            <a class="btn btn-primary" href="https://investagent.streamlit.app" target="_blank">
+                Open App &rarr;
+            </a>
+            <a class="btn btn-secondary" href="https://github.com/harineek24/investagent" target="_blank">
+                GitHub
+            </a>
+            <a class="btn btn-secondary" href="how-it-works.html">
+                How It Works
+            </a>
+        </div>
+        <div class="status">
+            <span class="dot" id="dot-investagent"></span>
+            <span id="status-investagent">Waking up...</span>
+        </div>
+    </div>
+
+    <!-- ── Add more project cards here ───────────────── -->
+    <!--
+    <div class="card" data-app="another-project">
+        <div class="card-icon">🤖</div>
+        <h2>Another Project</h2>
+        <p>Description here.</p>
+        <div class="tags">
+            <span class="tag">Tag</span>
+        </div>
+        <div class="card-actions">
+            <a class="btn btn-primary" href="https://another-project.streamlit.app" target="_blank">
+                Open App &rarr;
+            </a>
+            <a class="btn btn-secondary" href="https://github.com/harineek24/another-project" target="_blank">
+                GitHub
+            </a>
+        </div>
+        <div class="status">
+            <span class="dot" id="dot-another"></span>
+            <span id="status-another">Waking up...</span>
+        </div>
+    </div>
+    -->
+
+</div>
+
+<footer>
+    <a href="https://github.com/harineek24">github.com/harineek24</a>
+</footer>
+
+<!-- Hidden iframes silently wake the Streamlit apps as soon as the page loads -->
+<div style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
+    <iframe id="wake-investagent" src="" title="pre-wake"></iframe>
+    <!-- Add more iframes for more apps:
+    <iframe id="wake-another" src="" title="pre-wake"></iframe>
+    -->
+</div>
+
+<script>
+    // Map of app-name → { url, iframeId, dotId, statusId }
+    const APPS = [
+        {
+            name: "investagent",
+            // Replace with your real Streamlit Cloud URL
+            url: "https://investagent.streamlit.app",
+            iframe: "wake-investagent",
+            dot: "dot-investagent",
+            label: "status-investagent",
+        },
+        // Add more entries here for additional projects
+    ];
+
+    // Wake each app by loading it in a hidden iframe.
+    // Once the iframe loads, flip the status dot to green.
+    APPS.forEach((app) => {
+        const iframe = document.getElementById(app.iframe);
+        const dot    = document.getElementById(app.dot);
+        const label  = document.getElementById(app.label);
+
+        if (!iframe) return;
+
+        dot.classList.add("waking");
+        label.textContent = "Waking up...";
+
+        // Start loading the app in the background
+        iframe.src = app.url;
+
+        iframe.addEventListener("load", () => {
+            dot.classList.remove("waking");
+            dot.classList.add("ready");
+            label.textContent = "Ready";
+        });
+
+        // Fallback: assume ready after 45 s even if load event doesn't fire
+        // (cross-origin iframes may not always fire load reliably)
+        setTimeout(() => {
+            dot.classList.remove("waking");
+            dot.classList.add("ready");
+            label.textContent = "Ready";
+        }, 45000);
+    });
+</script>
+
+</body>
+</html>
