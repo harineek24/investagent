@@ -553,9 +553,16 @@ Agreement Check  -- "Do the agents agree?"
     # ── 3. The Six Analysts ───────────────────────────────────────────────
     st.header("3. The Six Analyst Agents")
     st.markdown(
-        "Each analyst has a distinct **investment philosophy** embedded in its system prompt "
-        "and a **scoring algorithm** that converts financial data into a signal. "
-        "They all share the same 7 tools, but each cares about different metrics."
+        "Each analyst has a distinct **investment philosophy**. Below are the exact "
+        "deterministic scoring rules from the original rule-based version of each agent — "
+        "still in the codebase as reference (`src/agents/value_agent.py` etc.)."
+    )
+    st.info(
+        "**The live graph you ran above doesn't use these fixed thresholds.** "
+        "It uses the **ReAct/LLM version** of each agent (`src/agents/react_agent.py`), "
+        "which gets the same philosophy as a system prompt, then autonomously calls the "
+        "7 tools and reasons step-by-step instead of computing a hardcoded score. "
+        "See the comparison at the end of this section."
     )
 
     # Value
@@ -689,6 +696,37 @@ Agreement Check  -- "Do the agents agree?"
 3. **Analyst Recommendations** — Buy upgrades vs. sell downgrades. More buys = +1.
 """)
     st.markdown("Combined score range: **-4 to +4**. Score >= 2 = bullish, <= -2 = bearish.")
+
+    # Deterministic vs Agentic comparison
+    st.subheader("3.7 Deterministic Scoring vs. Agentic Reasoning")
+    st.markdown(
+        "Same six philosophies, two different engines. The tables above describe the "
+        "**deterministic** engine; the live graph runs the **agentic** one."
+    )
+    st.dataframe(
+        pd.DataFrame({
+            "": ["Decision logic", "Inputs", "Tool use", "Explainability", "Adaptability", "Cost/latency", "Where it lives"],
+            "Deterministic (legacy)": [
+                "Fixed if/else thresholds on a numeric score",
+                "Same metrics every run, computed once",
+                "None — pulls data directly via Python",
+                "Exact score breakdown, fully reproducible",
+                "None — rules never change",
+                "Instant, no LLM call",
+                "src/agents/value_agent.py (+5 siblings)",
+            ],
+            "Agentic ReAct (live)": [
+                "LLM reasons over the philosophy prompt + observed data",
+                "Agent chooses which tools to call and how many times (up to 4)",
+                "Autonomous: picks from 7 tools based on what it still needs",
+                "Natural-language reasoning trail, but not strictly reproducible",
+                "Adjusts research path per ticker; weighted by past accuracy via memory",
+                "One or more LLM calls per ticker per agent",
+                "src/agents/react_agent.py",
+            ],
+        }),
+        width="stretch", hide_index=True,
+    )
 
     # ── 4. Agreement & Debate ─────────────────────────────────────────────
     st.header("4. Agreement Check & Debate")
