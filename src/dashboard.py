@@ -53,6 +53,24 @@ provider = st.sidebar.selectbox(
     help="Groq and Gemini have free tiers. Ollama runs locally for free.",
 )
 
+_provider_key_env = {
+    "groq": "GROQ_API_KEY",
+    "gemini": "GOOGLE_API_KEY",
+    "openai": "OPENAI_API_KEY",
+}
+if provider in _provider_key_env:
+    env_var = _provider_key_env[provider]
+    if not os.environ.get(env_var):
+        entered_key = st.sidebar.text_input(
+            f"{provider.title()} API key",
+            type="password",
+            help="Stored only in this browser session's memory. Never logged or saved to disk.",
+        )
+        if entered_key:
+            os.environ[env_var] = entered_key
+    else:
+        st.sidebar.caption(f"{env_var} loaded from environment/secrets.")
+
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     "**Agentic features:** ReAct tool-use, "
