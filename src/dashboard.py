@@ -250,6 +250,14 @@ elif page == "Agent Memory":
     st.markdown("View past decisions and agent performance across sessions.")
 
     from src.memory import get_recent_runs, get_all_agent_accuracies, get_ticker_history
+    from src.scoring import score_pending_decisions, MIN_AGE_DAYS
+
+    if st.button("Score decisions older than 30 days"):
+        scored = score_pending_decisions()
+        if scored:
+            st.success(f"Scored {scored} decision(s) against current prices.")
+        else:
+            st.info(f"No decisions are eligible yet (need to be {MIN_AGE_DAYS}+ days old).")
 
     # Agent accuracy
     st.subheader("Agent Accuracy Scores")
