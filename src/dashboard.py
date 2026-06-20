@@ -67,7 +67,7 @@ if provider in _provider_key_env:
             help="Stored only in this browser session's memory. Never logged or saved to disk.",
         )
         if entered_key:
-            os.environ[env_var] = entered_key
+            os.environ[env_var] = entered_key.strip()
     else:
         st.sidebar.caption(f"{env_var} loaded from environment/secrets.")
 
