@@ -53,6 +53,24 @@ provider = st.sidebar.selectbox(
     help="Groq and Gemini have free tiers. Ollama runs locally for free.",
 )
 
+_provider_key_env = {
+    "groq": "GROQ_API_KEY",
+    "gemini": "GOOGLE_API_KEY",
+    "openai": "OPENAI_API_KEY",
+}
+if provider in _provider_key_env:
+    env_var = _provider_key_env[provider]
+    if not os.environ.get(env_var):
+        entered_key = st.sidebar.text_input(
+            f"{provider.title()} API key",
+            type="password",
+            help="Stored only in this browser session's memory. Never logged or saved to disk.",
+        )
+        if entered_key:
+            os.environ[env_var] = entered_key
+    else:
+        st.sidebar.caption(f"{env_var} loaded from environment/secrets.")
+
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     "**Agentic features:** ReAct tool-use, "
@@ -232,6 +250,14 @@ elif page == "Agent Memory":
     st.markdown("View past decisions and agent performance across sessions.")
 
     from src.memory import get_recent_runs, get_all_agent_accuracies, get_ticker_history
+    from src.scoring import score_pending_decisions, MIN_AGE_DAYS
+
+    if st.button("Score decisions older than 30 days"):
+        scored = score_pending_decisions()
+        if scored:
+            st.success(f"Scored {scored} decision(s) against current prices.")
+        else:
+            st.info(f"No decisions are eligible yet (need to be {MIN_AGE_DAYS}+ days old).")
 
     # Agent accuracy
     st.subheader("Agent Accuracy Scores")
@@ -527,9 +553,16 @@ Agreement Check  -- "Do the agents agree?"
     # ── 3. The Six Analysts ───────────────────────────────────────────────
     st.header("3. The Six Analyst Agents")
     st.markdown(
-        "Each analyst has a distinct **investment philosophy** embedded in its system prompt "
-        "and a **scoring algorithm** that converts financial data into a signal. "
-        "They all share the same 7 tools, but each cares about different metrics."
+        "Each analyst has a distinct **investment philosophy**. Below are the exact "
+        "deterministic scoring rules from the original rule-based version of each agent — "
+        "still in the codebase as reference (`src/agents/value_agent.py` etc.)."
+    )
+    st.info(
+        "**The live graph you ran above doesn't use these fixed thresholds.** "
+        "It uses the **ReAct/LLM version** of each agent (`src/agents/react_agent.py`), "
+        "which gets the same philosophy as a system prompt, then autonomously calls the "
+        "7 tools and reasons step-by-step instead of computing a hardcoded score. "
+        "See the comparison at the end of this section."
     )
 
     # Value
@@ -663,6 +696,37 @@ Agreement Check  -- "Do the agents agree?"
 3. **Analyst Recommendations** — Buy upgrades vs. sell downgrades. More buys = +1.
 """)
     st.markdown("Combined score range: **-4 to +4**. Score >= 2 = bullish, <= -2 = bearish.")
+
+    # Deterministic vs Agentic comparison
+    st.subheader("3.7 Deterministic Scoring vs. Agentic Reasoning")
+    st.markdown(
+        "Same six philosophies, two different engines. The tables above describe the "
+        "**deterministic** engine; the live graph runs the **agentic** one."
+    )
+    st.dataframe(
+        pd.DataFrame({
+            "": ["Decision logic", "Inputs", "Tool use", "Explainability", "Adaptability", "Cost/latency", "Where it lives"],
+            "Deterministic (legacy)": [
+                "Fixed if/else thresholds on a numeric score",
+                "Same metrics every run, computed once",
+                "None — pulls data directly via Python",
+                "Exact score breakdown, fully reproducible",
+                "None — rules never change",
+                "Instant, no LLM call",
+                "src/agents/value_agent.py (+5 siblings)",
+            ],
+            "Agentic ReAct (live)": [
+                "LLM reasons over the philosophy prompt + observed data",
+                "Agent chooses which tools to call and how many times (up to 4)",
+                "Autonomous: picks from 7 tools based on what it still needs",
+                "Natural-language reasoning trail, but not strictly reproducible",
+                "Adjusts research path per ticker; weighted by past accuracy via memory",
+                "One or more LLM calls per ticker per agent",
+                "src/agents/react_agent.py",
+            ],
+        }),
+        width="stretch", hide_index=True,
+    )
 
     # ── 4. Agreement & Debate ─────────────────────────────────────────────
     st.header("4. Agreement Check & Debate")

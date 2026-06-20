@@ -30,6 +30,7 @@ from src.agents import (
 )
 from src.agents.debate import should_debate
 from src.memory import save_run, save_decision, update_run_result
+from src.scoring import score_pending_decisions
 
 console = Console()
 
@@ -108,6 +109,10 @@ def run_hedge_fund(
     """Run the agentic hedge fund simulation."""
     run_id = str(uuid.uuid4())[:8]
     workflow = build_workflow(selected_analysts)
+
+    # Score any past decisions that are now old enough to evaluate, so the
+    # debate/PM track-record weighting has real accuracy data to work with.
+    score_pending_decisions()
 
     # Save run to memory
     save_run(run_id, tickers, provider, initial_cash)

@@ -9,7 +9,7 @@ Uses SQLite (file-based, no server needed, free, deploys anywhere).
 import sqlite3
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 DB_PATH = os.environ.get("INVESTAGENT_DB", "investagent_memory.db")
 
@@ -194,6 +194,31 @@ def get_recent_runs(limit: int = 10) -> list[dict]:
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def get_unscored_decisions(min_age_days: int = 30) -> list[dict]:
+    """Decisions old enough to score but with no recorded outcome yet."""
+    conn = _get_conn()
+    cutoff = (datetime.now() - timedelta(days=min_age_days)).isoformat()
+    rows = conn.execute(
+        """SELECT id, ticker, agent, signal, price_at_decision, timestamp
+        FROM decisions
+        WHERE outcome IS NULL AND price_at_decision > 0 AND timestamp <= ?""",
+        (cutoff,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def update_decision_outcome(decision_id: int, price_after_30d: float, outcome: str):
+    """Record the realized price and outcome for a scored decision."""
+    conn = _get_conn()
+    conn.execute(
+        "UPDATE decisions SET price_after_30d = ?, outcome = ? WHERE id = ?",
+        (price_after_30d, outcome, decision_id),
+    )
+    conn.commit()
+    conn.close()
 
 
 def get_ticker_history(ticker: str) -> list[dict]:
