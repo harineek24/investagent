@@ -190,6 +190,25 @@ if page == "Analyze Stocks":
             st.markdown(f"### {color} {ticker}: **{action}** — {qty} shares (confidence: {conf}%)")
             st.markdown(f"> {reason}")
 
+        # --- Analyst Reasoning (what each agent actually said) ---
+        st.subheader("Analyst Reasoning")
+        st.caption("Each agent's signal, confidence, and the reasoning it produced after calling its tools.")
+        for ticker in display_tickers:
+            with st.expander(f"{ticker} — analyst-by-analyst breakdown"):
+                for agent_name, signals in analyst_signals.items():
+                    if agent_name in ("Risk Manager", "Portfolio Manager"):
+                        continue
+                    sig = signals.get(ticker, {})
+                    if not sig:
+                        continue
+                    signal = sig.get("signal", "neutral").upper()
+                    conf = sig.get("confidence", 0)
+                    reasoning = sig.get("reasoning", "No reasoning recorded.")
+                    icon = {"BULLISH": "🟢", "BEARISH": "🔴"}.get(signal, "🟡")
+                    st.markdown(f"**{icon} {agent_name}** — {signal} ({conf}% confidence)")
+                    st.markdown(f"> {reasoning}")
+                    st.markdown("---")
+
         # --- Signal Agreement Heatmap ---
         st.subheader("Agent Signal Matrix")
         matrix_data = {}
@@ -206,7 +225,7 @@ if page == "Analyze Stocks":
         if matrix_data:
             df_matrix = pd.DataFrame(matrix_data).T
             st.dataframe(
-                df_matrix.style.applymap(
+                df_matrix.style.map(
                     lambda v: (
                         "background-color: #2e7d32; color: white" if v == 1
                         else "background-color: #c62828; color: white" if v == -1
