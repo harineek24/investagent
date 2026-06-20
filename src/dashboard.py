@@ -60,15 +60,18 @@ _provider_key_env = {
 }
 if provider in _provider_key_env:
     env_var = _provider_key_env[provider]
-    if not os.environ.get(env_var):
-        entered_key = st.sidebar.text_input(
-            f"{provider.title()} API key",
-            type="password",
-            help="Stored only in this browser session's memory. Never logged or saved to disk.",
-        )
-        if entered_key:
-            os.environ[env_var] = entered_key.strip()
-    else:
+    has_existing = bool(os.environ.get(env_var))
+    entered_key = st.sidebar.text_input(
+        f"{provider.title()} API key"
+        + (" (override)" if has_existing else ""),
+        type="password",
+        help="Stored only in this browser session's memory. Never logged or saved to disk. "
+        + (f"{env_var} is currently loaded from environment/secrets — entering a key here overrides it."
+           if has_existing else ""),
+    )
+    if entered_key:
+        os.environ[env_var] = entered_key.strip()
+    elif has_existing:
         st.sidebar.caption(f"{env_var} loaded from environment/secrets.")
 
 st.sidebar.markdown("---")
