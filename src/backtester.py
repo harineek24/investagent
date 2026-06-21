@@ -24,6 +24,7 @@ def backtest(
     provider: str = "groq",
     model: str | None = None,
     initial_cash: float = 100_000,
+    initial_positions: dict | None = None,
     step_days: int = 30,
     on_period_complete: callable = None,
     selected_analysts: list[str] | None = None,
@@ -54,9 +55,12 @@ def backtest(
         if t == end:
             break
 
+    initial_positions = initial_positions or {}
     portfolio = {
         "cash": initial_cash,
-        "positions": {t: {"shares": 0, "avg_cost": 0} for t in tickers},
+        "positions": {
+            t: dict(initial_positions.get(t, {"shares": 0, "avg_cost": 0})) for t in tickers
+        },
     }
 
     history = []
@@ -83,6 +87,7 @@ def backtest(
                 model=model,
                 selected_analysts=selected_analysts,
                 initial_cash=portfolio["cash"],
+                existing_positions=portfolio["positions"],
                 show_reasoning=False,
             )
 
@@ -207,10 +212,23 @@ def main():
     parser.add_argument("--start-date", required=True, help="YYYY-MM-DD")
     parser.add_argument("--end-date", required=True, help="YYYY-MM-DD")
     parser.add_argument("--initial-cash", type=float, default=100_000)
+    parser.add_argument(
+        "--positions", type=str, default=None,
+        help="Existing positions as TICKER:SHARES:AVG_COST, comma-separated "
+             "(e.g. 'AAPL:50:180.00,MSFT:10:400.00')",
+    )
     parser.add_argument("--step-days", type=int, default=30, help="Days between rebalance")
     parser.add_argument("--provider", default="groq")
     parser.add_argument("--model", default=None)
     args = parser.parse_args()
+
+    initial_positions = {}
+    if args.positions:
+        for entry in args.positions.split(","):
+            ticker, shares, avg_cost = entry.strip().split(":")
+            initial_positions[ticker.strip().upper()] = {
+                "shares": int(shares), "avg_cost": float(avg_cost),
+            }
 
     tickers = [t.upper() for t in args.tickers]
     history, portfolio = backtest(
@@ -220,6 +238,7 @@ def main():
         provider=args.provider,
         model=args.model,
         initial_cash=args.initial_cash,
+        initial_positions=initial_positions,
         step_days=args.step_days,
     )
     print_results(history, portfolio, tickers, args.initial_cash)

@@ -110,7 +110,33 @@ if page == "Analyze Stocks":
     with col3:
         end_date = st.date_input("End Date", value=datetime.now())
 
+    cash_col, pos_col = st.columns([1, 2])
+    with cash_col:
+        initial_cash = st.number_input(
+            "Starting cash ($)", min_value=0.0, value=100_000.0, step=1000.0,
+            help="Cash available to the Risk Manager and Portfolio Manager for sizing decisions.",
+        )
+    with pos_col:
+        existing_positions_input = st.text_input(
+            "Existing positions (optional)",
+            placeholder="AAPL:50:180.00, MSFT:10:400.00",
+            help="TICKER:SHARES:AVG_COST, comma-separated. Needed if you want sell "
+                 "recommendations to be possible — the system can't suggest selling "
+                 "shares you don't tell it you own.",
+        )
+
     tickers = [t.strip().upper() for t in tickers_input.split() if t.strip()]
+
+    existing_positions = {}
+    if existing_positions_input.strip():
+        try:
+            for entry in existing_positions_input.split(","):
+                ticker, shares, avg_cost = entry.strip().split(":")
+                existing_positions[ticker.strip().upper()] = {
+                    "shares": int(shares), "avg_cost": float(avg_cost),
+                }
+        except ValueError:
+            st.error("Couldn't parse existing positions — use TICKER:SHARES:AVG_COST, comma-separated.")
 
     if st.button("Run Analysis", type="primary", use_container_width=True):
         if not tickers:
@@ -122,6 +148,8 @@ if page == "Analyze Stocks":
 
                     result = run_hedge_fund(
                         tickers=tickers,
+                        initial_cash=initial_cash,
+                        existing_positions=existing_positions,
                         start_date=start_date.strftime("%Y-%m-%d"),
                         end_date=end_date.strftime("%Y-%m-%d"),
                         provider=provider,
@@ -382,6 +410,20 @@ elif page == "Backtest":
     with col4:
         bt_step = st.number_input("Rebalance (days)", value=30, min_value=7, max_value=90)
 
+    cash_col, pos_col = st.columns([1, 2])
+    with cash_col:
+        bt_initial_cash = st.number_input(
+            "Starting cash ($)", min_value=0.0, value=100_000.0, step=1000.0, key="bt_cash",
+        )
+    with pos_col:
+        bt_positions_input = st.text_input(
+            "Existing positions (optional)",
+            placeholder="AAPL:50:180.00, MSFT:10:400.00",
+            help="TICKER:SHARES:AVG_COST, comma-separated. Seeds the backtest's starting "
+                 "holdings so sell decisions have something to act on.",
+            key="bt_positions",
+        )
+
     all_analysts = [
         "Value Analyst", "Growth Analyst", "Contrarian Analyst",
         "Technical Analyst", "Fundamental Analyst", "Sentiment Analyst",
@@ -396,9 +438,23 @@ elif page == "Backtest":
     if st.button("Run Backtest", type="primary", use_container_width=True):
         tickers = [t.strip().upper() for t in bt_tickers.split() if t.strip()]
         selected = bt_analysts if bt_analysts else None
+
+        bt_initial_positions = {}
+        positions_error = False
+        if bt_positions_input.strip():
+            try:
+                for entry in bt_positions_input.split(","):
+                    ticker, shares, avg_cost = entry.strip().split(":")
+                    bt_initial_positions[ticker.strip().upper()] = {
+                        "shares": int(shares), "avg_cost": float(avg_cost),
+                    }
+            except ValueError:
+                st.error("Couldn't parse existing positions — use TICKER:SHARES:AVG_COST, comma-separated.")
+                positions_error = True
+
         if not tickers:
             st.error("Enter at least one ticker.")
-        else:
+        elif not positions_error:
             progress_bar = st.progress(0)
             status_text = st.empty()
 
@@ -421,6 +477,8 @@ elif page == "Backtest":
                     start_date=bt_start.strftime("%Y-%m-%d"),
                     end_date=bt_end.strftime("%Y-%m-%d"),
                     provider=provider,
+                    initial_cash=bt_initial_cash,
+                    initial_positions=bt_initial_positions,
                     step_days=bt_step,
                     on_period_complete=on_period_complete,
                     selected_analysts=selected,
@@ -434,6 +492,7 @@ elif page == "Backtest":
                         "history": history,
                         "portfolio": portfolio,
                         "tickers": tickers,
+                        "initial_cash": bt_initial_cash,
                     }
 
             except Exception as e:
@@ -446,6 +505,7 @@ elif page == "Backtest":
         bt_history = saved["history"]
         bt_portfolio = saved["portfolio"]
         bt_display_tickers = saved["tickers"]
+        bt_saved_initial_cash = saved.get("initial_cash", 100_000)
 
         st.divider()
 
@@ -462,7 +522,7 @@ elif page == "Backtest":
 
         # Return
         col1, col2, col3 = st.columns(3)
-        col1.metric("Initial", f"$100,000")
+        col1.metric("Initial", f"${bt_saved_initial_cash:,.0f}")
         col2.metric("Final", f"${final['total_value']:,.0f}")
         col3.metric("Return", f"{final['return_pct']:+.1f}%")
 

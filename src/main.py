@@ -104,6 +104,7 @@ def run_hedge_fund(
     model: str | None = None,
     selected_analysts: list[str] | None = None,
     initial_cash: float = 100_000,
+    existing_positions: dict | None = None,
     show_reasoning: bool = False,
 ):
     """Run the agentic hedge fund simulation."""
@@ -117,10 +118,14 @@ def run_hedge_fund(
     # Save run to memory
     save_run(run_id, tickers, provider, initial_cash)
 
-    # Build initial portfolio state
+    # Build initial portfolio state, seeding any positions the user already holds
+    existing_positions = existing_positions or {}
     portfolio = {
         "cash": initial_cash,
-        "positions": {ticker: {"shares": 0, "avg_cost": 0} for ticker in tickers},
+        "positions": {
+            ticker: dict(existing_positions.get(ticker, {"shares": 0, "avg_cost": 0}))
+            for ticker in tickers
+        },
         "_llm_provider": provider,
         "_llm_model": model,
     }
@@ -209,6 +214,11 @@ def main():
     parser = argparse.ArgumentParser(description="InvestAgent - Agentic AI Hedge Fund Simulator")
     parser.add_argument("--tickers", nargs="+", required=True, help="Stock tickers to analyze")
     parser.add_argument("--initial-cash", type=float, default=100_000, help="Starting cash (default: $100,000)")
+    parser.add_argument(
+        "--positions", type=str, default=None,
+        help="Existing positions as TICKER:SHARES:AVG_COST, comma-separated "
+             "(e.g. 'AAPL:50:180.00,MSFT:10:400.00')",
+    )
     parser.add_argument("--start-date", type=str, default=None, help="Start date (YYYY-MM-DD)")
     parser.add_argument("--end-date", type=str, default=None, help="End date (YYYY-MM-DD)")
     parser.add_argument("--provider", type=str, default=None, help="LLM provider: groq, gemini, ollama, openai")
@@ -220,6 +230,14 @@ def main():
     # Defaults
     end_date = args.end_date or datetime.now().strftime("%Y-%m-%d")
     start_date = args.start_date or (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
+
+    existing_positions = {}
+    if args.positions:
+        for entry in args.positions.split(","):
+            ticker, shares, avg_cost = entry.strip().split(":")
+            existing_positions[ticker.strip().upper()] = {
+                "shares": int(shares), "avg_cost": float(avg_cost),
+            }
 
     console.print(Panel(
         "[bold green]InvestAgent[/bold green] - Agentic AI Hedge Fund Simulator\n"
@@ -248,6 +266,7 @@ def main():
         model=args.model,
         selected_analysts=selected,
         initial_cash=args.initial_cash,
+        existing_positions=existing_positions,
         show_reasoning=args.show_reasoning,
     )
 
