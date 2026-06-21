@@ -1,4 +1,4 @@
-# InvestAgent — 6-Slide Presentation
+# InvestAgent — 7-Slide Presentation
 *Speaker notes included. Diagrams are plain-text boxes — easy to redraw in PowerPoint/Keynote/Google Slides.*
 
 ---
@@ -117,7 +117,40 @@ Concretely, the state holds things like: the list of stocks, each analyst's opin
 
 ---
 
-## Slide 5 — Why This Is Different / Honest Limitations
+## Slide 5 — Built to Fail Safely (Agent Design Best Practices)
+
+### Visual
+```
+   Layer 1: LLM call fails (rate limit, timeout, bad key)
+        │
+        └──→ 🛟 Data Fallback — quick rule-based signal from raw
+              financial metrics + price data, instead of a 0%-confidence blank
+
+   Layer 2: Agent loops past its iteration cap without concluding
+        │
+        └──→ 🛟 Neutral Signal — low-confidence "inconclusive," not a crash
+
+   Layer 3: Portfolio Manager itself fails
+        │
+        └──→ 🛟 Majority Vote — confidence-weighted vote across the 6
+              analyst signals stands in as the final call
+
+        Plus, every analyst is hard-capped at 4 tool calls.
+        The Portfolio Manager is capped at 3.
+        No agent can loop forever and burn unlimited free-tier quota.
+```
+
+### On-slide text
+- Bounded autonomy: agents reason freely, but inside hard limits (max tool calls per analyst, max steps for the Portfolio Manager).
+- Three layers of fallback mean one bad API response never crashes the whole run — it degrades gracefully instead.
+- This is a recognized pattern in agent design: give the AI room to reason, but always have a deterministic safety net underneath it.
+
+### Speaker notes
+This slide answers the question a skeptical audience member will ask: "what happens when the AI gets it wrong, or the API goes down?" Walk through the three layers in order, from most-graceful to most-basic: first try a quick rule-based read of the actual data (still useful, just not reasoned), then a plain "I don't know yet" neutral signal if an agent loops too long, and only as a last resort fall back to a simple vote-counting rule if the final decision-maker itself can't run. Tie it back to cost control too — the iteration caps exist because this runs on free LLM tiers, so unconstrained reasoning loops would be slow and could exhaust the free quota fast. The takeaway: "autonomous" doesn't mean "unsupervised" — every agent here has a leash.
+
+---
+
+## Slide 6 — Why This Is Different / Honest Limitations
 
 ### Visual
 ```
@@ -139,7 +172,7 @@ Be upfront about the caveat slide rather than burying it — it builds credibili
 
 ---
 
-## Slide 6 — Reusing This Elsewhere
+## Slide 7 — Reusing This Elsewhere
 
 ### Visual
 ```
