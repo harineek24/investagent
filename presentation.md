@@ -182,20 +182,39 @@ Be upfront about the caveat slide rather than burying it — it builds credibili
 
         Swap the experts, keep the skeleton:
 
-   ┌─────────────────┐   ┌──────────────────┐   ┌──────────────────┐
-   │ Hiring panel     │   │ Medical diagnosis │   │ Content moderation│
-   │ AI: 4 interviewer│   │ AI: 3 specialist   │   │ AI: multiple       │
-   │ personas score a │   │ "opinions" on a    │   │ reviewers flag a   │
-   │ candidate;        │   │ symptom; disagree  │   │ post; disagree =   │
-   │ disagree = panel  │   │ = escalate to a    │   │ escalate to human  │
-   │ discussion        │   │ senior review      │   │ moderator          │
-   └─────────────────┘   └──────────────────┘   └──────────────────┘
+   ┌─────────────────┐   ┌──────────────────┐   ┌────────────────────────┐
+   │ Hiring panel     │   │ Medical diagnosis │   │ Content moderation     │
+   │ AI: 4 interviewer│   │ AI: 3 specialist   │   │ AI: hate-speech / spam │
+   │ personas score a │   │ "opinions" on a    │   │ / misinfo / self-harm  │
+   │ candidate;        │   │ symptom; disagree  │   │ lenses scan a post;    │
+   │ disagree = panel  │   │ = escalate to a    │   │ disagree = escalate to │
+   │ discussion        │   │ senior review      │   │ human moderator        │
+   └─────────────────┘   └──────────────────┘   └────────────────────────┘
+
+        Content moderation deep-dive — the strongest fit, because it's checkable:
+
+   Lenses: hate-speech | spam/scam | misinformation | self-harm risk | platform policy
+        │
+        ├─ all agree "clean"        → auto-publish
+        ├─ all agree "violation"    → auto-remove
+        └─ disagree                 → DEBATE (weighted by each lens's track record)
+                                            │
+                                  policy floor: self-harm/violence ALWAYS → human, no exceptions
+                                            │
+                                     human reviewer's call = ground truth
+                                            │
+                              feeds back into accuracy/memory loop (same as InvestAgent)
 ```
 
 ### On-slide text
 - The reusable idea isn't "stock picking" — it's: *multiple AI perspectives → measure agreement → escalate only when needed → one accountable final decision.*
 - This pattern (LangGraph state + conditional branching) fits anywhere you want several "expert" viewpoints to inform one confident decision instead of trusting a single AI call.
 - Other reuse angle: the **scoring/memory layer** — logging every decision and quietly grading it later — works for any system where you want to know "is this AI actually getting better, or just confident?"
+- Content moderation is the standout reuse case for one reason: it's **checkable**. Public labeled datasets (Jigsaw/Civil Comments, HateXplain, OLID) and human-reviewer appeals give real ground truth — so the accuracy/memory loop tracks genuine precision/recall, not a noisy proxy like "did the stock move in the predicted direction."
 
+### Speaker notes
+This is your "so what" slide — it turns a stock-picker demo into a transferable architecture lesson. Land on two reusable pieces specifically: (1) the *branch-only-when-needed* pattern (cheap when everyone agrees, expensive reasoning only on genuine conflict — efficient by design), and (2) the *decision memory* pattern (every output gets logged with enough context to later check if it was right, building an accuracy track record over time). Both are valuable independent of investing — name-drop a domain the audience cares about (hiring, support tickets, content review, etc.) to make it concrete for them specifically.
+
+If you have time, spend an extra beat on content moderation specifically: unlike stock-picking, where "accuracy" is just a lagging correlation with price movement, content moderation has an honest ground truth — a human reviewer's final call, or a labeled public dataset — so the same memory/scoring mechanism this project built actually means something there. It's worth saying out loud: *this project's weakest piece (proving the AI is "right") becomes this pattern's strongest piece once you change domains.*
 ### Speaker notes
 This is your "so what" slide — it turns a stock-picker demo into a transferable architecture lesson. Land on two reusable pieces specifically: (1) the *branch-only-when-needed* pattern (cheap when everyone agrees, expensive reasoning only on genuine conflict — efficient by design), and (2) the *decision memory* pattern (every output gets logged with enough context to later check if it was right, building an accuracy track record over time). Both are valuable independent of investing — name-drop a domain the audience cares about (hiring, support tickets, content review, etc.) to make it concrete for them specifically.
