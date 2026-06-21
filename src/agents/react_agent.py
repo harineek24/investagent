@@ -25,30 +25,70 @@ MAX_ITERATIONS = 4
 # Tool registry: functions agents can call autonomously
 # ---------------------------------------------------------------------------
 
-def _build_tool_descriptions() -> str:
-    """Build a description of available tools for the agent prompt."""
-    return """Available tools (call by name with JSON args):
+_TOOL_DESCRIPTIONS = {
+    "get_prices": (
+        "get_prices(ticker, start_date, end_date) -> OHLCV DataFrame summary",
+        "price trends, moving averages, volume analysis, momentum",
+    ),
+    "get_financial_metrics": (
+        "get_financial_metrics(ticker) -> dict with 28 financial fields",
+        "P/E, P/B, ROE, margins, growth rates, debt ratios",
+    ),
+    "get_company_news": (
+        "get_company_news(ticker) -> list of recent news articles",
+        "sentiment, catalysts, market-moving events",
+    ),
+    "get_insider_trades": (
+        "get_insider_trades(ticker) -> insider buy/sell transactions",
+        "insider confidence signals",
+    ),
+    "get_recommendations": (
+        "get_recommendations(ticker) -> analyst upgrade/downgrade history",
+        "Wall Street consensus",
+    ),
+    "get_sec_financial_facts": (
+        "get_sec_financial_facts(ticker) -> structured XBRL data from SEC filings",
+        "official revenue, net income, assets, debt (multi-year)",
+    ),
+    "get_sec_recent_filings": (
+        "get_sec_recent_filings(ticker, filing_type) -> list of recent SEC filings",
+        "checking when last 10-K/10-Q was filed",
+    ),
+}
 
-1. get_prices(ticker, start_date, end_date) -> OHLCV DataFrame summary
-   Use for: price trends, moving averages, volume analysis, momentum
+# Tools most relevant to each agent's philosophy, in priority order.
+# Agents can still call any tool — this just steers them toward the
+# ones that matter for their lens first, so the 4-call budget isn't
+# spent on irrelevant data.
+AGENT_RECOMMENDED_TOOLS = {
+    "Value Analyst": ["get_financial_metrics", "get_sec_financial_facts", "get_prices"],
+    "Growth Analyst": ["get_financial_metrics", "get_sec_financial_facts", "get_recommendations"],
+    "Contrarian Analyst": ["get_prices", "get_company_news", "get_insider_trades"],
+    "Technical Analyst": ["get_prices"],
+    "Fundamental Analyst": ["get_financial_metrics", "get_sec_financial_facts", "get_sec_recent_filings"],
+    "Sentiment Analyst": ["get_company_news", "get_insider_trades", "get_recommendations"],
+}
 
-2. get_financial_metrics(ticker) -> dict with 28 financial fields
-   Use for: P/E, P/B, ROE, margins, growth rates, debt ratios
 
-3. get_company_news(ticker) -> list of recent news articles
-   Use for: sentiment, catalysts, market-moving events
+def _build_tool_descriptions(agent_name: str | None = None) -> str:
+    """Build a description of available tools for the agent prompt.
 
-4. get_insider_trades(ticker) -> insider buy/sell transactions
-   Use for: insider confidence signals
+    Recommended tools (matching the agent's philosophy) are listed first
+    and flagged, so the agent spends its limited tool-call budget on
+    the data that's actually relevant to its lens.
+    """
+    recommended = AGENT_RECOMMENDED_TOOLS.get(agent_name, [])
+    ordered = recommended + [name for name in _TOOL_DESCRIPTIONS if name not in recommended]
 
-5. get_recommendations(ticker) -> analyst upgrade/downgrade history
-   Use for: Wall Street consensus
+    lines = ["Available tools (call by name with JSON args):", ""]
+    for i, name in enumerate(ordered, 1):
+        signature, use_for = _TOOL_DESCRIPTIONS[name]
+        tag = " [RECOMMENDED for your philosophy]" if name in recommended else ""
+        lines.append(f"{i}. {signature}{tag}")
+        lines.append(f"   Use for: {use_for}")
+        lines.append("")
 
-6. get_sec_financial_facts(ticker) -> structured XBRL data from SEC filings
-   Use for: official revenue, net income, assets, debt (multi-year)
-
-7. get_sec_recent_filings(ticker, filing_type) -> list of recent SEC filings
-   Use for: checking when last 10-K/10-Q was filed"""
+    return "\n".join(lines).rstrip()
 
 
 def _execute_tool(tool_name: str, args: dict) -> str:
@@ -163,7 +203,8 @@ When you're ready to conclude, respond with EXACTLY:
 FINAL_ANSWER: {{"signal": "bullish|neutral|bearish", "confidence": <0-100>, "reasoning": "<your analysis>"}}
 
 ## Rules
-- Call at least 2 different tools before concluding (get multiple perspectives)
+- Prioritize the tools marked [RECOMMENDED for your philosophy] below — they match your lens
+- Call at least 2 different tools before concluding, preferring recommended ones first
 - Don't call the same tool twice with the same args
 - Think out loud — explain WHY you're calling each tool
 - Your confidence should reflect the strength of evidence
@@ -334,7 +375,7 @@ def _run_react_loop(
         start_date=start_date,
         end_date=end_date,
         max_iter=MAX_ITERATIONS,
-        tools=_build_tool_descriptions(),
+        tools=_build_tool_descriptions(agent_name),
     )
 
     conversation = [system_prompt]

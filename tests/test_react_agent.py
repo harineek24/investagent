@@ -3,6 +3,8 @@ from src.agents.react_agent import (
     _parse_final_answer,
     _data_fallback,
     _run_react_loop,
+    _build_tool_descriptions,
+    AGENT_RECOMMENDED_TOOLS,
 )
 
 
@@ -77,6 +79,26 @@ def test_data_fallback_handles_exceptions_gracefully(monkeypatch):
     result = _data_fallback("AAPL", "2024-01-01", "2024-02-01")
     assert result["signal"] == "neutral"
     assert result["confidence"] == 20
+
+
+def test_tool_descriptions_flag_recommended_tools_for_agent():
+    desc = _build_tool_descriptions("Technical Analyst")
+    assert "get_prices" in desc
+    assert desc.index("get_prices") < desc.index("get_financial_metrics")
+    assert "[RECOMMENDED for your philosophy]" in desc
+
+
+def test_tool_descriptions_unknown_agent_has_no_recommendations():
+    desc = _build_tool_descriptions("Unknown Analyst")
+    assert "[RECOMMENDED for your philosophy]" not in desc
+
+
+def test_every_agent_recommendation_list_only_uses_real_tool_names():
+    from src.agents.react_agent import _TOOL_DESCRIPTIONS
+
+    for agent_name, tools in AGENT_RECOMMENDED_TOOLS.items():
+        for tool in tools:
+            assert tool in _TOOL_DESCRIPTIONS, f"{agent_name} recommends unknown tool {tool}"
 
 
 class _FakeResponse:
